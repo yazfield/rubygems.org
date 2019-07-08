@@ -49,16 +49,35 @@ module RubygemSearchable
     settings number_of_shards: 1,
              number_of_replicas: 1,
              analysis: {
-               analyzer: {
-                 rubygem: {
+               filter: {
+                 autocomplete_ngram: {
+                   max_gram: 20,
+                   min_gram: 2,
+                   type: "edge_ngram"
+                 }
+               },
+               tokenizer: {
+                 special_characters: {
                    type: "pattern",
                    pattern: "[\s#{Regexp.escape(Patterns::SPECIAL_CHARACTERS)}]+"
+                 }
+               },
+               analyzer: {
+                 rubygem: {
+                   type: "custom",
+                   tokenizer: "special_characters",
+                   filter: %w[lowercase autocomplete_ngram]
+                 },
+                 default_analyzer: {
+                   type: "custom",
+                   tokenizer: "special_characters",
+                   filter: %w[lowercase]
                  }
                }
              }
 
     mapping do
-      indexes :name, type: "text", analyzer: "rubygem" do
+      indexes :name, type: "text", analyzer: "rubygem", search_analyzer: "default_analyzer" do
         indexes :suggest, analyzer: "simple"
       end
       indexes :summary, type: "text", analyzer: "english" do
