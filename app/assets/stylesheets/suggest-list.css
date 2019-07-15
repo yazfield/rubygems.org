@@ -1,6 +1,6 @@
 .suggest-list {
   position: absolute;
-  top: 56%;
+  top: inherit;
   left: 0;
   z-index: 1000;
   float: left;
