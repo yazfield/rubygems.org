@@ -5,51 +5,100 @@ class AutocompletesTest < SystemTest
   include ESHelper
 
   setup do
-    create(:rubygem, name: "rubocop")
-    create(:rubygem, name: "rubocop-performance")
+    Capybara.server_port = 3000
+    Capybara.server_host = "localhost"
+    Capybara.app_host = "http://localhost:3000"
+    Capybara.current_driver = :selenium_chrome_headless
+    Capybara.default_max_wait_time = 10
+    Selenium::WebDriver.logger.level = :error # In this version of Capybara, 'deprecated' warn appeears. This line suppress them.
+
+    rubygem = create(:rubygem, name: "rubocop")
+    create(:version, rubygem: rubygem, indexed: true)
+    rubygem = create(:rubygem, name: "rubocop-performance")
+    create(:version, rubygem: rubygem, indexed: true)
     import_and_refresh
-    Capybara.app_host = 'localhost:3000' #temporary solution for not connecting the webpage
-    Capybara.current_driver = :selenium_chrome
+
     visit root_path
-    Selenium::WebDriver.logger.level = :error #In this version of Capybara, "deprecated" warn appeears. This line suppress them.
+    @fill_field = find_by_id "home_query"
+    @fill_field.set "rubo"
+  end
+
+  def list_exist?
+    find ".suggest-list"
   end
 
   test "search field" do
-    fill_in 'home_query', with: "rubo"
-    click_on 'home_submit_button'
+    click_on "home_submit_button"
     assert page.has_content? "search"
     assert page.has_content? "rubocop"
   end
 
+  test "selected field is only one with cursor selecting" do
+    list_exist?
+    find(".suggest-list").all("li").each(&:hover)
+    assert_selector ".selected", count: 1
+  end
+
+  test "selected field is only one with arrow key selecting" do
+    list_exist?
+    @fill_field.native.send_keys :down
+    find ".selected"
+    @fill_field.native.send_keys :down
+    assert_selector ".selected", count: 1
+  end
+
+  test "suggest list doesn't appear with gem not existing" do
+    list_exist?
+    @fill_field.set "ruxyz"
+    assert_all_of_selectors "#home_query-suggestList", visible: :hidden
+  end
+
+  test "suggest list doesn't appear unless the search field is focused" do
+    list_exist?
+    find("h1").click
+    assert_all_of_selectors "#home_query-suggestList", visible: :hidden
+  end
 
   test "down arrow key to choose suggestion" do
-    fill_field = find_by_id("home_query")
-    fill_field.set("rubo")
-    has_css?('li.menu-item')
-    fill_field.send_keys :down
-    fill_field.has_no_text?('rubo', :exact => true)
+    list_exist?
+    @fill_field.native.send_keys :down
+    assert page.has_no_field? "home_query", with: "rubo"
   end
 
   test "up arrow key to choose suggestion" do
-    fill_field = find_by_id("home_query")
-    fill_field.set("rubo")
-    has_css?('li.menu-item')
-    fill_field.send_keys :up
-    fill_field.has_no_text?('rubo', :exact => true)
+    list_exist?
+    @fill_field.native.send_keys :up
+    assert page.has_no_field? "home_query", with: "rubo"
   end
 
-  test "mouse click to choose suggestion" do
-    fill_in 'home_query', with: "rubo"
-    has_css?('li.menu-item')
-    find('li', exact_text:'rubocop').hover
-    find(:css, '.selected').click
-    click_on 'home_submit_button'
-    assert page.has_content? "search"
+  test "down arrow key should loop" do
+    list_exist?
+    @fill_field.native.send_keys :down, :down, :down
+    assert find(".menu-item", match: :first).matches_css?(".selected")
+  end
+
+  test "up arrow key should loop" do
+    list_exist?
+    @fill_field.native.send_keys :up, :up, :up
+    assert find("#home_query-suggestList").all(".menu-item").last.matches_css?(".selected")
+  end
+
+  test "mouse hover a suggest item to choose suggestion" do
+    list_exist?
+    find("li", text: "rubocop", match: :first).hover
+    assert_selector ".selected"
+  end
+
+  test "mouse click a suggestion item to submit" do
+    find("li", text: "rubocop", match: :first).click
+    assert_equal current_path, search_path || "/gems/"
     assert page.has_content? "rubocop"
   end
 
   teardown do
+    Capybara.default_max_wait_time = 2
     Capybara.use_default_driver
+    Capybara.default_host
     Capybara.app_host = "#{Gemcutter::PROTOCOL}://#{Gemcutter::HOST}"
   end
 end
