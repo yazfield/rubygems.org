@@ -15,6 +15,11 @@ $(function() {
     this.after("<ul id=" + listName + "></ul>");
     var list = $('#' + listName);
     list.attr('class', 'suggest-list');
+    var originalForm = 'null';
+
+    function listLength(){
+      return list.find('li').length;
+    };
 
     function addDataToSuggestList(data) {
       list.find('li').remove();
@@ -32,38 +37,40 @@ $(function() {
       this.addClass('selected');
     };
 
-    function move(dir) {
-      switch (dir) {
-        case 'prev':
-          indexNumber--;
-          break;
-        case 'next':
-          indexNumber++;
-          break;
-      };
-      switch (indexNumber) {
-        case -1:
-        case -2:
-          indexNumber = list.find('li').length - 1;
-          break;
-        case list.find('li').length:
-          indexNumber = 0;
-          break;
+    function correctIndexNumber(indicator) {
+      switch (indicator){
+        case -2: return list.find('li').length - 1; break;
+        case list.find('li').length: return -1; break;
+        default: return indicator; break;
       };
     };
+
+    function movePrev(){
+      indexNumber--;
+      indexNumber = correctIndexNumber(indexNumber);
+    };
+
+    function moveNext(){
+      indexNumber++;
+      indexNumber = correctIndexNumber(indexNumber);
+    }
 
     function arrowSelect(arrow) {
       list.find('li').removeClass('selected');
       switch (arrow) {
         case 'up':
-          move('prev');
+          movePrev();
           break;
         case 'down':
-          move('next')
+          moveNext();
           break;
       };
-      list.find('li').eq(indexNumber).focusedItem();
-      that.val(list.find('.selected').text());
+      if ( indexNumber != -1 || indexNumber == list.find('li').length ){
+        list.find('li').eq(indexNumber).focusedItem();
+        that.val(list.find('.selected').text());
+      } else {
+        that.val(originalForm);
+      };
       list.show();
     };
 
@@ -82,6 +89,7 @@ $(function() {
       e.preventDefault();
       var input = $.trim($(this).val());
       if (input.length >= 2 && previousForm != input) {
+        originalForm = that.val();
         $.ajax({
           url: '/api/v1/search/autocomplete',
           type: 'GET',
@@ -96,10 +104,11 @@ $(function() {
             list.hide();
           };
         });
+      } else{
       };
-      if (e.keyCode == 38) {
+      if (e.keyCode == 38 || (e.ctrlKey && e.keyCode == 80)) {
         arrowSelect('up');
-      } else if (e.keyCode == 40) {
+      } else if (e.keyCode == 40 || (e.ctrlKey && e.keyCode == 78)) {
         arrowSelect('down');
       };
       if (input.length < 2) {
@@ -112,7 +121,7 @@ $(function() {
       previousForm = $.trim($(this).val());
     });
 
-    $(document).on({
+    this.parent().on({
       'mousedown': function() {
         that.val($(this).text())
         that.parent().submit();

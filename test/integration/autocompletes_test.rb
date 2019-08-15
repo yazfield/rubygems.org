@@ -28,7 +28,7 @@ class AutocompletesTest < SystemTest
   end
 
   test "search field" do
-    click_on "home_submit_button"
+    click_on class: "home__search__icon"
     assert page.has_content? "search"
     assert page.has_content? "rubocop"
   end
@@ -71,15 +71,41 @@ class AutocompletesTest < SystemTest
     assert page.has_no_field? "home_query", with: "rubo"
   end
 
+  test "ctrl + n key to choose suggestion" do
+    list_exist?
+    @fill_field.native.send_keys [:control, "n"]
+    assert page.has_no_field? "home_query", with: "rubo"
+  end
+
+  test "ctrl + p key to choose suggestion" do
+    list_exist?
+    @fill_field.native.send_keys [:control, "p"]
+    assert page.has_no_field? "home_query", with: "rubo"
+  end
+
+  test "search form should be focused when up from the top of suggestion list" do
+    list_exist?
+    @fill_field.native.send_keys :down, :up
+    assert page.has_field? "home_query", with: "rubo"
+    assert page.has_no_content? ".selected"
+  end
+
+  test "search form should be focused when up from the bottom of suggestion list" do
+    list_exist?
+    @fill_field.native.send_keys :up, :down
+    assert page.has_field? "home_query", with: "rubo"
+    assert page.has_no_content? ".selected"
+  end
+
   test "down arrow key should loop" do
     list_exist?
-    @fill_field.native.send_keys :down, :down, :down
+    @fill_field.native.send_keys :down, :down, :down, :down
     assert find(".menu-item", match: :first).matches_css?(".selected")
   end
 
   test "up arrow key should loop" do
     list_exist?
-    @fill_field.native.send_keys :up, :up, :up
+    @fill_field.native.send_keys :up, :up, :up, :up
     assert find("#home_query-suggestList").all(".menu-item").last.matches_css?(".selected")
   end
 
