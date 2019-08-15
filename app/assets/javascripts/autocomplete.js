@@ -55,16 +55,9 @@ $(function() {
       indexNumber = correctIndexNumber(indexNumber);
     }
 
-    function arrowSelect(arrow) {
+    function upSelected() {
       list.find('li').removeClass('selected');
-      switch (arrow) {
-        case 'up':
-          movePrev();
-          break;
-        case 'down':
-          moveNext();
-          break;
-      };
+      movePrev();
       if ( indexNumber != -1 || indexNumber == list.find('li').length ){
         list.find('li').eq(indexNumber).focusedItem();
         that.val(list.find('.selected').text());
@@ -74,6 +67,17 @@ $(function() {
       list.show();
     };
 
+    function downSelected(){
+      list.find('li').removeClass('selected');
+      moveNext();
+      if ( indexNumber != -1 || indexNumber == list.find('li').length ){
+        list.find('li').eq(indexNumber).focusedItem();
+        that.val(list.find('.selected').text());
+      } else {
+        that.val(originalForm);
+      };
+      list.show();
+    };
     this.blur(function() {
       list.hide();
     });
@@ -84,6 +88,14 @@ $(function() {
         list.show();
       };
     });
+
+    function upSelect(e){
+      (e.keyCode == 38 || (e.ctrlKey && e.keyCode == 80)) ? return true : return false;
+    };
+
+    function downSelect(e){
+      (e.keyCode == 40 || (e.ctrlKey && e.keyCode == 78)) ? return true : return false;
+    };
 
     this.keyup(function(e) {
       e.preventDefault();
@@ -106,10 +118,10 @@ $(function() {
         });
       } else{
       };
-      if (e.keyCode == 38 || (e.ctrlKey && e.keyCode == 80)) {
-        arrowSelect('up');
-      } else if (e.keyCode == 40 || (e.ctrlKey && e.keyCode == 78)) {
-        arrowSelect('down');
+      if (upSelect(e)) {
+        upSelected();
+      } else if (downSelect(e)) {
+        downSelected();
       };
       if (input.length < 2) {
         list.hide();
