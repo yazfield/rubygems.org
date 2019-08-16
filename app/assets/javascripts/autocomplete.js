@@ -21,12 +21,25 @@ $(function() {
       return list.find('li').length;
     };
 
+    function indexNumberOutofList(){
+    (indexNumber != -1 || indexNumber == listLength()) ? return true: return false;
+    };
+
+    function selectListItem(){
+      if ( indexNumberOutofList() ){
+        list.find('li').eq(indexNumber).focusedItem();
+        that.val(list.find('.selected').text());
+      } else {
+        that.val(originalForm);
+      };
+    };
+
     function addDataToSuggestList(data) {
       list.find('li').remove();
       for (var i = 0; i < data.length && i < 10; i++) {
-        var newLi = $('<li>').text(data[i]);
-        $(newLi).attr('class', 'menu-item');
-        list.append(newLi);
+        var newItem = $('<li>').text(data[i]);
+        $(newItem).attr('class', 'menu-item');
+        list.append(newItem);
       }
       indexNumber = -1;
       list.show();
@@ -39,8 +52,8 @@ $(function() {
 
     function correctIndexNumber(indicator) {
       switch (indicator){
-        case -2: return list.find('li').length - 1; break;
-        case list.find('li').length: return -1; break;
+        case -2: return listLength() - 1; break;
+        case listLength(): return -1; break;
         default: return indicator; break;
       };
     };
@@ -58,26 +71,17 @@ $(function() {
     function upSelected() {
       list.find('li').removeClass('selected');
       movePrev();
-      if ( indexNumber != -1 || indexNumber == list.find('li').length ){
-        list.find('li').eq(indexNumber).focusedItem();
-        that.val(list.find('.selected').text());
-      } else {
-        that.val(originalForm);
-      };
+      selectListItem();
       list.show();
     };
 
     function downSelected(){
       list.find('li').removeClass('selected');
       moveNext();
-      if ( indexNumber != -1 || indexNumber == list.find('li').length ){
-        list.find('li').eq(indexNumber).focusedItem();
-        that.val(list.find('.selected').text());
-      } else {
-        that.val(originalForm);
-      };
+      selectListItem();
       list.show();
     };
+
     this.blur(function() {
       list.hide();
     });
@@ -116,7 +120,6 @@ $(function() {
             list.hide();
           };
         });
-      } else{
       };
       if (upSelect(e)) {
         upSelected();
