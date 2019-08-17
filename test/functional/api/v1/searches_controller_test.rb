@@ -49,4 +49,24 @@ class Api::V1::SearchesControllerTest < ActionController::TestCase
       YAML.safe_load body
     end
   end
+
+  context "on GET to autocomplete" do
+    setup do
+      @match1 = create(:rubygem, name: "match1")
+      @match2 = create(:rubygem, name: "match2")
+      create(:version, rubygem: @match1)
+      create(:version, rubygem: @match2)
+      import_and_refresh
+      get :autocomplete, params: { query: "ma" }
+    end
+
+    should "get names of gems" do
+      assert page.has_content?("match1")
+      assert page.has_content?("match2")
+    end
+
+    should "only respond gem exist" do
+      assert page.has_no_content?("other")
+    end
+  end
 end
