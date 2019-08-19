@@ -161,6 +161,12 @@ class RubygemSearchableTest < ActiveSupport::TestCase
       suggestions = %w[keyword keywo keywordo]
       assert_equal suggestions, response.suggestions.terms
     end
+
+    should "return names of suggestion gems" do
+      response = ElasticSearcher.new("keywo").suggestions
+      suggestions = %w[keyword keywordo keywo]
+      assert_equal suggestions, response
+    end
   end
 
   context "advanced search" do
