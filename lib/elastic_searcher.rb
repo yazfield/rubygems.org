@@ -14,7 +14,7 @@ class ElasticSearcher
     @api ? result : [error_msg(e), result]
   end
 
-  def suggest
+  def suggestions
     suggest_key = search
     names = []
     suggest_key[1].each do |response|
