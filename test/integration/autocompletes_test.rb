@@ -50,13 +50,13 @@ class AutocompletesTest < SystemTest
   test "suggest list doesn't appear with gem not existing" do
     list_exist?
     @fill_field.set "ruxyz"
-    assert_all_of_selectors "#home_query-suggestList", visible: :hidden
+    assert_all_of_selectors "#home_querySuggestList", visible: :hidden
   end
 
   test "suggest list doesn't appear unless the search field is focused" do
     list_exist?
     find("h1").click
-    assert_all_of_selectors "#home_query-suggestList", visible: :hidden
+    assert_all_of_selectors "#home_querySuggestList", visible: :hidden
   end
 
   test "down arrow key to choose suggestion" do
@@ -106,7 +106,7 @@ class AutocompletesTest < SystemTest
   test "up arrow key should loop" do
     list_exist?
     @fill_field.native.send_keys :up, :up, :up, :up
-    assert find("#home_query-suggestList").all(".menu-item").last.matches_css?(".selected")
+    assert find("#home_querySuggestList").all(".menu-item").last.matches_css?(".selected")
   end
 
   test "mouse hover a suggest item to choose suggestion" do

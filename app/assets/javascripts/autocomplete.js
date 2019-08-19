@@ -8,13 +8,13 @@ $(function() {
   $.fn.autocomplete = function() {
     var indexNumber = -1;
     var previousForm = 'null';
-    var listName = this.attr('id') + "-suggestList";
+    var originalForm = 'null';
     var _that = this;
     this.attr('autocomplete', 'off');
+    var listName = this.attr('id') + "SuggestList";
     this.after("<ul id=" + listName + "></ul>");
     var $list = $('#' + listName);
     $list.attr('class', 'suggest-list');
-    var originalForm = 'null';
 
     function getListLength(){
       return $list.find('li').length;
@@ -24,12 +24,12 @@ $(function() {
       return getListLength();
     }
 
-    function isIndexNumberOutofList(){
+    function isNotIndexNumberOutofList(){
     return (indexNumber != -1 || indexNumber == getListLength()) ?  true: false;
     };
 
     function selectListItem(){
-      if ( isIndexNumberOutofList() ){
+      if ( isNotIndexNumberOutofList() ){
         $list.find('li').eq(indexNumber).focusItem();
         _that.val($list.find('.selected').text());
       } else {
