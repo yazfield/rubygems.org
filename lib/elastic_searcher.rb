@@ -15,12 +15,12 @@ class ElasticSearcher
   end
 
   def suggestions
-    suggest_key = search
-    names = []
-    suggest_key[1].each do |response|
-      names.push(response.name)
-    end
-    names
+    result = Rubygem.__elasticsearch__.search(suggestions_definition).page(@page)
+    result = result.results.response.response[:suggest][:completion_suggestion][0][:options]
+    @api ? result.map(&:_source) : [nil, result]
+  rescue Faraday::ConnectionFailed, Faraday::TimeoutError, Elasticsearch::Transport::Transport::Error => e
+    result = Rubygem.legacy_search(@query).page(@page)
+    @api ? result : [error_msg(e), result]
   end
 
   private
@@ -71,6 +71,16 @@ class ElasticSearcher
       source source_array
       # Return suggestions unless there's no query from the user
       suggest :suggest_name, text: query_str, term: { field: "name.suggest", suggest_mode: "always" } if query_str.present?
+    end
+  end
+
+  def suggestions_definition
+    query_str = @query
+    source_array = @api ? api_source : ui_source
+
+    Elasticsearch::DSL::Search.search do
+      suggest :completion_suggestion, prefix: query_str, completion: { field: "suggest", contexts: { yanked: false }, size: 30 }
+      source source_array
     end
   end
 

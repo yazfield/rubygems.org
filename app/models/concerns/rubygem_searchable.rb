@@ -39,6 +39,13 @@ module RubygemSearchable
         summary:           latest_version&.summary,
         description:       latest_version&.description,
         updated:           updated_at,
+        suggest: {
+          input: name,
+          weight: downloads,
+          contexts: {
+            yanked: versions.none?(&:indexed?)
+          }
+        },
         dependencies: {
           development: deps&.select { |r| r.rubygem && r.scope == "development" },
           runtime: deps&.select { |r| r.rubygem && r.scope == "runtime" }
@@ -49,29 +56,10 @@ module RubygemSearchable
     settings number_of_shards: 1,
              number_of_replicas: 1,
              analysis: {
-               filter: {
-                 autocomplete_ngram: {
-                   max_gram: 20,
-                   min_gram: 2,
-                   type: "edge_ngram"
-                 }
-               },
-               tokenizer: {
-                 special_characters: {
-                   type: "pattern",
-                   pattern: "[\s#{Regexp.escape(Patterns::SPECIAL_CHARACTERS)}]+"
-                 }
-               },
                analyzer: {
                  rubygem: {
-                   type: "custom",
-                   tokenizer: "special_characters",
-                   filter: %w[lowercase autocomplete_ngram]
-                 },
-                 default_analyzer: {
-                   type: "custom",
-                   tokenizer: "special_characters",
-                   filter: %w[lowercase]
+                   type: "pattern",
+                   pattern: "[\s#{Regexp.escape(Patterns::SPECIAL_CHARACTERS)}]+"
                  }
                }
              }
@@ -85,6 +73,10 @@ module RubygemSearchable
       end
       indexes :description, type: "text", analyzer: "english" do
         indexes :raw, analyzer: "simple"
+      end
+      instance_eval do
+        context = { name: "yanked", type: "category" }
+        @mapping[:suggest] = { type: "completion", contexts: context }
       end
       indexes :yanked, type: "boolean"
       indexes :downloads, type: "integer"

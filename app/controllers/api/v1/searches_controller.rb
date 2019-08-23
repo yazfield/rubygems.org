@@ -12,7 +12,11 @@ class Api::V1::SearchesController < Api::BaseController
 
   def autocomplete
     return unless params[:query]&.is_a?(String)
-    names = ElasticSearcher.new(params[:query], page: @page).suggestions
+    names = []
+    results = ElasticSearcher.new(params[:query], api: true, page: @page).suggestions
+    results.each do |gem|
+      names << gem.name
+    end
     render json: names
   end
 

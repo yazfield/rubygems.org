@@ -50,23 +50,26 @@ class Api::V1::SearchesControllerTest < ActionController::TestCase
     end
   end
 
-  context "on GET to autocomplete" do
+  context "on GET to autocomplete with query=ma" do
     setup do
       @match1 = create(:rubygem, name: "match1")
       @match2 = create(:rubygem, name: "match2")
+      @other = create(:rubygem, name: "other")
       create(:version, rubygem: @match1)
       create(:version, rubygem: @match2)
+      create(:version, rubygem: @other)
       import_and_refresh
       get :autocomplete, params: { query: "ma" }
+      @body = JSON.parse(response.body)
     end
 
-    should "get names of gems" do
-      assert page.has_content?("match1")
-      assert page.has_content?("match2")
+    should respond_with :success
+    should "return gems name" do
+      assert_equal 2, @body.size
+      assert_equal "match1", @body[0]
     end
-
-    should "only respond gem exist" do
-      assert page.has_no_content?("other")
+    should "not contain other gems" do
+      assert_not @body.include?("other")
     end
   end
 end
