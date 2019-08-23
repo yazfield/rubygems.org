@@ -65,7 +65,7 @@ module RubygemSearchable
              }
 
     mapping do
-      indexes :name, type: "text", analyzer: "rubygem", search_analyzer: "default_analyzer" do
+      indexes :name, type: "text", analyzer: "rubygem" do
         indexes :suggest, analyzer: "simple"
       end
       indexes :summary, type: "text", analyzer: "english" do

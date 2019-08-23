@@ -21,26 +21,31 @@ class AutocompletesTest < SystemTest
     visit root_path
     @fill_field = find_by_id "home_query"
     @fill_field.set "rubo"
+    wait_for_ajax
   end
 
-  def list_exist?
-    find ".suggest-list"
+  def wait_for_ajax
+    Timeout.timeout(Capybara.default_max_wait_time) do
+      loop do
+        active = page.evaluate_script("jQuery.active")
+        break if active.zero?
+      end
+    end
   end
 
   test "search field" do
+    @fill_field.set "rubocop"
     click_on class: "home__search__icon"
     assert page.has_content? "search"
     assert page.has_content? "rubocop"
   end
 
   test "selected field is only one with cursor selecting" do
-    list_exist?
     find(".suggest-list").all("li").each(&:hover)
     assert_selector ".selected", count: 1
   end
 
   test "selected field is only one with arrow key selecting" do
-    list_exist?
     @fill_field.native.send_keys :down
     find ".selected"
     @fill_field.native.send_keys :down
@@ -48,69 +53,58 @@ class AutocompletesTest < SystemTest
   end
 
   test "suggest list doesn't appear with gem not existing" do
-    list_exist?
     @fill_field.set "ruxyz"
     assert_all_of_selectors "#home_querySuggestList", visible: :hidden
   end
 
   test "suggest list doesn't appear unless the search field is focused" do
-    list_exist?
     find("h1").click
     assert_all_of_selectors "#home_querySuggestList", visible: :hidden
   end
 
   test "down arrow key to choose suggestion" do
-    list_exist?
     @fill_field.native.send_keys :down
     assert page.has_no_field? "home_query", with: "rubo"
   end
 
   test "up arrow key to choose suggestion" do
-    list_exist?
     @fill_field.native.send_keys :up
     assert page.has_no_field? "home_query", with: "rubo"
   end
 
   test "ctrl + n key to choose suggestion" do
-    list_exist?
     @fill_field.native.send_keys [:control, "n"]
     assert page.has_no_field? "home_query", with: "rubo"
   end
 
   test "ctrl + p key to choose suggestion" do
-    list_exist?
     @fill_field.native.send_keys [:control, "p"]
     assert page.has_no_field? "home_query", with: "rubo"
   end
 
   test "search form should be focused when up from the top of suggestion list" do
-    list_exist?
     @fill_field.native.send_keys :down, :up
     assert page.has_field? "home_query", with: "rubo"
     assert page.has_no_content? ".selected"
   end
 
-  test "search form should be focused when up from the bottom of suggestion list" do
-    list_exist?
+  test "search form should be focused when down from the bottom of suggestion list" do
     @fill_field.native.send_keys :up, :down
     assert page.has_field? "home_query", with: "rubo"
     assert page.has_no_content? ".selected"
   end
 
   test "down arrow key should loop" do
-    list_exist?
     @fill_field.native.send_keys :down, :down, :down, :down
     assert find(".menu-item", match: :first).matches_css?(".selected")
   end
 
   test "up arrow key should loop" do
-    list_exist?
     @fill_field.native.send_keys :up, :up, :up, :up
     assert find("#home_querySuggestList").all(".menu-item").last.matches_css?(".selected")
   end
 
   test "mouse hover a suggest item to choose suggestion" do
-    list_exist?
     find("li", text: "rubocop", match: :first).hover
     assert_selector ".selected"
   end
