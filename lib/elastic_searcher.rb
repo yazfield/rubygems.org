@@ -16,8 +16,12 @@ class ElasticSearcher
 
   def suggestions
     result = Rubygem.__elasticsearch__.search(suggestions_definition).page(@page)
-    result = result.results.response.response[:suggest][:completion_suggestion][0][:options]
-    result = Rubygem.legacy_search(@query).page(@page)
+    result = result.response.suggest[:completion_suggestion][0][:options]
+    names = []
+    result.each do |gem|
+      names << gem[:_source].name
+    end
+    names
   rescue Faraday::ConnectionFailed, Faraday::TimeoutError, Elasticsearch::Transport::Transport::Error
     Rubygem.legacy_search(@query).page(@page)
   end

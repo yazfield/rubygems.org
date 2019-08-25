@@ -11,12 +11,8 @@ class Api::V1::SearchesController < Api::BaseController
   end
 
   def autocomplete
-    names = []
-    results = ElasticSearcher.new(params[:query], api: true, page: @page).suggestions
-    results.each do |gem|
-      names << gem.name
-    end
-    render json: names
+    results = ElasticSearcher.new(params[:query], page: @page).suggestions
+    render json: results
   end
 
   private
