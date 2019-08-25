@@ -1,6 +1,6 @@
 class Api::V1::SearchesController < Api::BaseController
-  before_action :set_page, only: :show
-  before_action :verify_query_string, only: :show
+  before_action :set_page, only: %i[show autocomplete]
+  before_action :verify_query_string, only: %i[show autocomplete]
 
   def show
     @rubygems = ElasticSearcher.new(query_params, api: true, page: @page).search
@@ -11,7 +11,6 @@ class Api::V1::SearchesController < Api::BaseController
   end
 
   def autocomplete
-    return unless params[:query]&.is_a?(String)
     names = []
     results = ElasticSearcher.new(params[:query], api: true, page: @page).suggestions
     results.each do |gem|
