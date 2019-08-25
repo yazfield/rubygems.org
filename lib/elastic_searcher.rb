@@ -1,11 +1,11 @@
 class ElasticSearcher
-  def initialize(query, page: 1, api: false)
+  def initialize(query, page: 1)
     @query  = query
     @page   = page
-    @api    = api
   end
 
-  def search
+  def search(api: false)
+    @api = api
     result = Rubygem.__elasticsearch__.search(search_definition).page(@page)
     result.response # ES query is triggered here to allow fallback. avoids lazy loading done in the view
     @api ? result.map(&:_source) : [nil, result]
@@ -17,10 +17,9 @@ class ElasticSearcher
   def suggestions
     result = Rubygem.__elasticsearch__.search(suggestions_definition).page(@page)
     result = result.results.response.response[:suggest][:completion_suggestion][0][:options]
-    @api ? result.map(&:_source) : [nil, result]
-  rescue Faraday::ConnectionFailed, Faraday::TimeoutError, Elasticsearch::Transport::Transport::Error => e
     result = Rubygem.legacy_search(@query).page(@page)
-    @api ? result : [error_msg(e), result]
+  rescue Faraday::ConnectionFailed, Faraday::TimeoutError, Elasticsearch::Transport::Transport::Error
+    Rubygem.legacy_search(@query).page(@page)
   end
 
   private
@@ -76,11 +75,10 @@ class ElasticSearcher
 
   def suggestions_definition
     query_str = @query
-    source_array = @api ? api_source : ui_source
 
     Elasticsearch::DSL::Search.search do
       suggest :completion_suggestion, prefix: query_str, completion: { field: "suggest", contexts: { yanked: false }, size: 30 }
-      source source_array
+      source "name"
     end
   end
 
